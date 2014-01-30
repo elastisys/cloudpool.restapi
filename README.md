@@ -25,4 +25,4 @@ After building, the documentation is available under the `docs/_build` directory
 
 Online documentation
 ====================
-The latest documentation can also be found online at http://cloudadapterapi.readthedocs.org/en/latest/overview.html.
+The latest documentation can also be found online at http://cloudadapterapi.readthedocs.org/en/latest.
