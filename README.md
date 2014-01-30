@@ -11,6 +11,7 @@ The HTML rendering of the documentation can be built as follows:
      dependencies and nothing else):
 
        `make virtualenv`
+
        `. virtualenv.scaleadapter/bin/activate`
 
   2. Install the required dependencies in this virtual environment:
