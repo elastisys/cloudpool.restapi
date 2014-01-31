@@ -1,178 +1,57 @@
-.. elastisys:scale cloud adapter REST API documentation master file, created by
-   sphinx-quickstart on Thu Jan 30 14:51:57 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+elastisys:scale cloud adapter REST API documentation
+====================================================
 
-elastisys:scale cloud adapter REST API
-======================================
+This documentation covers the REST API that all 
+`elastisys:scale <http://elastisys.com/scale>`_ cloud adapters 
+are required to publish. 
 
-All `elastisys:scale <http://elastisys.com/scale>`_ cloud adapters 
-are required to publish the REST API described below. 
+A *cloud adapter* is a key component in an 
+`elastisys:scale <http://elastisys.com/scale>`_ autoscaling setup. 
 
-All API methods are assumed to be synchronous.
-That is, when they return to the caller, their actions have completed (taken effect).
+An elastisys:scale autoscaling system consists of two main parts: (1) 
+an elastisys:scale autoscaler server and (2) a cloud adapter. The autoscaler
+server collects monitoring data reported by the application from a monitoring 
+database and applies scaling algorithms to, ultimately, emit a number of required 
+VM instances to keep the auto-scaling-enabled service running smoothly. This
+number is communicated over a secured (SSL) channel to the cloud adapter, 
+which instructs the cloud infrastructure to add or remove VMs, as appropriate.
+A schematical overview of the system is shown in the image below.
 
+.. image:: images/autoscaler_components.png
+  :width: 700px
 
-Operations
-----------
+So the main purpose of a cloud adapter is to handle communication with the 
+targeted cloud provider, essentially translating the machine pool resize 
+instructions suggested by the autoscaler to the particular protocol/API 
+offered by the cloud provider. More specifically, a cloud adapter 
+performs two primary tasks:
 
-``GET /pool``
-*************
+  * It answers requests about the members of the autoscaled machine pool.
 
-  - Description: retrieves the current machine pool members
-
-  - Input: None
-
-  - Output: 
-
-    - On success: HTTP response code 200 with a :ref:`machine_pool_message`
-
-    - On error: HTTP response code 500 with an :ref:`error_response_message`
-
-``POST /pool``
-*************
-
-  - Description: requests a resize of the machine pool
-  
-  - Input: The desired number of machine instances in the pool as a machine pool :ref:`resize_request_message`.
-
-  - Output:
-  
-    - On success: HTTP response code 200 without message content.
-  
-    - On error: 
-      
-      - on illegal input: code 400 with an :ref:`error_response_message`
-    
-      - otherwise: HTTP response code 500 with an :ref:`error_response_message`
+  * It carries out machine pool resize requests suggested by the autoscaler.
 
 
-Messages
---------
-
-.. _resize_request_message:
-
-Resize request message
-**********************
-
-+--------------+----------------------------------------------------+
-| Description  | a message used to request that the machine pool be |
-|              | resized to a desired number of machine instances.  |
-+--------------+----------------------------------------------------+
-| Content type |  ``application/json``                              |
-+--------------+----------------------------------------------------+
-| Schema       | ``{ "desiredCapacity": <number> }``                |
-+--------------+----------------------------------------------------+
-
-Sample document: ::
-
-     { "desiredCapacity": 3 }
-
-
-.. _error_response_message:
-
-Error response message
-**********************
-
-+--------------+----------------------------------------------------+
-| Description  | contains further details (in addition to the       |
-|              | response code) on server-side errors.provider).    |
-+--------------+----------------------------------------------------+
-| Content type |  ``application/json``                              |
-+--------------+----------------------------------------------------+
-| Schema       | ``{ "message": <string>, "detail": <string> }``    |
-+--------------+----------------------------------------------------+
-
-The ``message`` is a human-readable error message intended for presentation, 
-whereas the ``detail`` attribute holds error details (such as a stack trace).
-
-This is a sample error message: ::
-
-  {
-    "message": "failure to process pool get request",
-    "detail": "... long stacktrace ..."
-  }
+The interface between the autoscaler and the cloud adapter is a REST API.
+All cloud adapters are required to implement this REST API and make it 
+available over secure HTTP (HTTPS). The REST API is described in greater 
+detail in the :doc:`api`.
 
 
 
-.. _machine_pool_message:
 
-Machine pool message
-********************
+Documentation:
 
-+--------------+----------------------------------------------------+
-| Description  | Describes the current status of the monitored      |
-|              | machine pool.                                      |
-+--------------+----------------------------------------------------+
-| Content type |  ``application/json``                              |
-+--------------+----------------------------------------------------+
+.. toctree::
+   :maxdepth: 4
 
-The machine pool schema has the following structure: ::
-
-   {
-     "timestamp": <iso-8601 datetime>,
-     "machines": [ <machine> ... ]
-   }
-
-Here, every ``<machine>`` is also a json document with the following structure: ::
-
-  {
-    "id": <string>,
-    "state": <state>,
-    "launchtime": <iso-8601 datetime>,
-    "metadata": <jsonobject>
-  } 
-
-Here, ``launchtime`` may be ``null`` and ``metadata`` is an arbitrary JSON object.
-The ``<state>`` is a string that may take on any of the following values:
-
-+-------------+---------------------------------------------------------------------+
-| State       | Description                                                         |
-+=============+=====================================================================+
-| REQUESTED   | Machine has been requested from the underlying infrastructure and   |
-|             |	the request is pending fulfillment.                                 |
-+-------------+---------------------------------------------------------------------+
-| REJECTED    | Machine request was rejected by the underlying infrastructure.      |
-+-------------+---------------------------------------------------------------------+
-| PENDING     | Machine is in the process of being launched.                        |
-+-------------+---------------------------------------------------------------------+
-| RUNNING     | Machine is launched (boot process may not be completed).            |
-+-------------+---------------------------------------------------------------------+
-| OPERATIONAL | Machine is launched and reports itself as being operational.        |
-+-------------+---------------------------------------------------------------------+
-| TERMINATING | Machine is shutting down.                                           |
-+-------------+---------------------------------------------------------------------+
-| TERMINATED  | Machine is terminated.                                              |
-+-------------+---------------------------------------------------------------------+
-| STOPPING    | Machine is stopping.                                                |
-+-------------+---------------------------------------------------------------------+
-| STOPPED     | Machine is stopped.                                                 |
-+-------------+---------------------------------------------------------------------+
-
-Below is a sample machine pool document: ::
+   api
 
 
-  {
-    "timestamp": "2013-11-07T13:50:00Z",
-    "machines": [
-      {
-        "id": "i-123456",
-        "state": "PENDING",
-        "launchtime": "2013-11-07T13:50:00.000Z",        
-        "metadata": {
-          "scaling-group": "mygroup"
-        }
-      },
-      {
-        "id": "i-123457",
-        "state": "RUNNING",
-        "launchtime": "2013-11-07T11:45:00.000Z",        
-        "metadata": {
-          "scaling-group": "mygroup",
-          "primary": "true"
-        }
-      }
-    ]
-  }
 
+.. Indices and tables
+.. ==================
+
+.. * :ref:`genindex`
+.. * :ref:`modindex`
+.. * :ref:`search`
 
