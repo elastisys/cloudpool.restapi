@@ -121,56 +121,72 @@ Here, every ``<machine>`` is also a json document with the following structure: 
     "id": <string>,
     "state": <state>,
     "launchtime": <iso-8601 datetime>,
+    "publicIps": [<ip-address>, ...],
+    "privateIps": [<ip-address>, ...],
     "metadata": <jsonobject>
   } 
 
-Here, ``launchtime`` may be ``null`` and ``metadata`` is an arbitrary JSON object.
-The ``<state>`` is a string that may take on any of the following values:
+The attributes are to be interpreted as follows:
+  
+  * ``id``: The identifier of the machine.
+  * ``state``: The state of the machine. See the table below for the range of possible values.
+  * ``launchtime``: The launch time of the machine if it has been launched. If the machine
+    is in a state where it hasn't been launched yet (``REQUESTED`` state) this attribute
+    may be left out or set to ``null``.
+  * ``publicIps``: The list of public IP addresses associated with this machine. Depending
+    on the state of the machine, this list may be empty.
+  * ``privateIps``: The list of private IP addresses associated with this machine. Depending
+    on the state of the machine, this list may be empty.
+  * ``metadata``: a JSON object of arbitrary depth carrying cloud-specific meta data.
 
-+-------------+---------------------------------------------------------------------+
-| State       | Description                                                         |
-+=============+=====================================================================+
-| REQUESTED   | Machine has been requested from the underlying infrastructure and   |
-|             |	the request is pending fulfillment.                                 |
-+-------------+---------------------------------------------------------------------+
-| REJECTED    | Machine request was rejected by the underlying infrastructure.      |
-+-------------+---------------------------------------------------------------------+
-| PENDING     | Machine is in the process of being launched.                        |
-+-------------+---------------------------------------------------------------------+
-| RUNNING     | Machine is launched (boot process may not be completed).            |
-+-------------+---------------------------------------------------------------------+
-| OPERATIONAL | Machine is launched and reports itself as being operational.        |
-+-------------+---------------------------------------------------------------------+
-| TERMINATING | Machine is shutting down.                                           |
-+-------------+---------------------------------------------------------------------+
-| TERMINATED  | Machine is terminated.                                              |
-+-------------+---------------------------------------------------------------------+
-| STOPPING    | Machine is stopping.                                                |
-+-------------+---------------------------------------------------------------------+
-| STOPPED     | Machine is stopped.                                                 |
-+-------------+---------------------------------------------------------------------+
+The ``state`` attribute value is a string that may take on any of the following values:
+
++-----------------+---------------------------------------------------------------------+
+| State           | Description                                                         |
++=================+=====================================================================+
+| ``REQUESTED``   | Machine has been requested from the underlying infrastructure and   |
+|                 | the request is pending fulfillment.                                 |
++-----------------+---------------------------------------------------------------------+
+| ``REJECTED``    | Machine request was rejected by the underlying infrastructure.      |
++-----------------+---------------------------------------------------------------------+
+| ``PENDING``     | Machine is in the process of being launched.                        |
++-----------------+---------------------------------------------------------------------+
+| ``RUNNING``     | Machine is launched (boot process may not be completed).            |
++-----------------+---------------------------------------------------------------------+
+| ``OPERATIONAL`` | Machine is launched and reports itself as being operational.        |
++-----------------+---------------------------------------------------------------------+
+| ``TERMINATING`` | Machine is shutting down.                                           |
++-----------------+---------------------------------------------------------------------+
+| ``TERMINATED``  | Machine is terminated.                                              |
++-----------------+---------------------------------------------------------------------+
+| ``STOPPING``    | Machine is stopping.                                                |
++-----------------+---------------------------------------------------------------------+
+| ``STOPPED``     | Machine is stopped.                                                 |
++-----------------+---------------------------------------------------------------------+
 
 Below is a sample machine pool document: ::
 
-
   {
-    "timestamp": "2013-11-07T13:50:00Z",
+    "timestamp": "2013-11-07T13:50:00.000Z",
     "machines": [
       {
         "id": "i-123456",
-        "state": "PENDING",
-        "launchtime": "2013-11-07T13:50:00.000Z",        
+        "state": "RUNNING",
+        "launchtime": "2013-11-07T14:50:00.000Z",
+        "publicIps": ["54.211.230.169"],
+        "privateIps": ["10.122.122.69"],
         "metadata": {
-          "scaling-group": "mygroup"
+          "scaling-group": "mygroup"         
         }
       },
       {
         "id": "i-123457",
-        "state": "RUNNING",
-        "launchtime": "2013-11-07T11:45:00.000Z",        
+        "state": "PENDING",
+        "launchtime": "2013-11-07T13:49:50.000Z",        
+        "publicIps": [],
+        "privateIps": [],
         "metadata": {
           "scaling-group": "mygroup",
-          "primary": "true"
         }
       }
     ]
