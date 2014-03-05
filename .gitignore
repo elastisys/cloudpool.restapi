@@ -19,6 +19,19 @@ lib
 lib64
 __pycache__
 
+# Emacs
+*~
+
+# build artifacts
+_build/
+
+# virtual environments
+virtualenv.*
+
+# rope
+.ropeproject/
+
+
 # Installer logs
 pip-log.txt
 
