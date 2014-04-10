@@ -20,7 +20,7 @@ Operations
 ``GET /pool``
 *************
 
-  - Description: retrieves the current machine pool members
+  - Description: Retrieves the current machine pool members.
 
   - Input: None
 
@@ -33,9 +33,9 @@ Operations
 ``POST /pool``
 **************
 
-  - Description: requests a resize of the machine pool
+  - Description: Sets the desired number of active machines in the machine pool.
   
-  - Input: The desired number of machine instances in the pool as a machine pool :ref:`resize_request_message`.
+  - Input: The desired number of active machine instances in the pool as a :ref:`resize_request_message`.
 
   - Output:
   
@@ -56,14 +56,14 @@ Messages
 Resize request message
 **********************
 
-+--------------+----------------------------------------------------+
-| Description  | a message used to request that the machine pool be |
-|              | resized to a desired number of machine instances.  |
-+--------------+----------------------------------------------------+
-| Content type |  ``application/json``                              |
-+--------------+----------------------------------------------------+
-| Schema       | ``{ "desiredCapacity": <number> }``                |
-+--------------+----------------------------------------------------+
++--------------+-----------------------------------------------------------+
+| Description  | A message used to request that the machine pool be        |
+|              | resized to a desired number of active machine instances.  |
++--------------+-----------------------------------------------------------+
+| Content type |  ``application/json``                                     |
++--------------+-----------------------------------------------------------+
+| Schema       | ``{ "desiredCapacity": <number> }``                       |
++--------------+-----------------------------------------------------------+
 
 Sample document: ::
 
@@ -76,8 +76,8 @@ Error response message
 **********************
 
 +--------------+----------------------------------------------------+
-| Description  | contains further details (in addition to the       |
-|              | response code) on server-side errors.provider).    |
+| Description  | Contains further details (in addition to the HTTP  |
+|              | response code) on server-side errors.              |
 +--------------+----------------------------------------------------+
 | Content type |  ``application/json``                              |
 +--------------+----------------------------------------------------+
@@ -120,6 +120,7 @@ Here, every ``<machine>`` is also a json document with the following structure: 
   {
     "id": <string>,
     "state": <state>,
+    "liveness": <liveness state>,
     "launchtime": <iso-8601 datetime>,
     "publicIps": [<ip-address>, ...],
     "privateIps": [<ip-address>, ...],
@@ -129,7 +130,14 @@ Here, every ``<machine>`` is also a json document with the following structure: 
 The attributes are to be interpreted as follows:
   
   * ``id``: The identifier of the machine.
-  * ``state``: The state of the machine. See the table below for the range of possible values.
+  * ``state``: The execution state of the machine. See the 
+    :ref:`machine state table <machine_state_table>` below for the range of possible values.
+  * ``liveness``: Additional state information about the operational status of the machine 
+    for machines in an *active machine state* (``PENDING`` or ``RUNNING``). 
+    This is an optional field that may be included for cloud adapters that monitor machine
+    liveness on pool members.
+    See the :ref:`liveness state table <liveness_state_table>` below for the range of 
+    possible values.
   * ``launchtime``: The launch time of the machine if it has been launched. If the machine
     is in a state where it hasn't been launched yet (``REQUESTED`` state) this attribute
     may be left out or set to ``null``.
@@ -141,28 +149,73 @@ The attributes are to be interpreted as follows:
 
 The ``state`` attribute value is a string that may take on any of the following values:
 
+.. _machine_state_table:
+
 +-----------------+---------------------------------------------------------------------+
 | State           | Description                                                         |
 +=================+=====================================================================+
-| ``REQUESTED``   | Machine has been requested from the underlying infrastructure and   |
-|                 | the request is pending fulfillment.                                 |
+| ``REQUESTED``   | The machine has been requested from the underlying infrastructure   |
+|                 | and the request is pending fulfillment.                             |
 +-----------------+---------------------------------------------------------------------+
-| ``REJECTED``    | Machine request was rejected by the underlying infrastructure.      |
+| ``REJECTED``    | The machine request was rejected by the underlying infrastructure.  |
 +-----------------+---------------------------------------------------------------------+
-| ``PENDING``     | Machine is in the process of being launched.                        |
+| ``PENDING``     | The machine is in the process of being launched.                    |
 +-----------------+---------------------------------------------------------------------+
-| ``RUNNING``     | Machine is launched (boot process may not be completed).            |
+| ``RUNNING``     | The machine is launched. However, the boot process may not yet have |
+|                 | completed and the machine may not be operational (the machine's     |
+|                 | :ref:`liveness <liveness_state_table>` attribute may provide more   |
+|                 | detailed state information).                                        |
 +-----------------+---------------------------------------------------------------------+
-| ``OPERATIONAL`` | Machine is launched and reports itself as being operational.        |
+| ``TERMINATING`` | The machine is in the process of being stopped/shut down.           |
 +-----------------+---------------------------------------------------------------------+
-| ``TERMINATING`` | Machine is shutting down.                                           |
+| ``TERMINATED``  | The machine has been stopped/shut down.                             |
 +-----------------+---------------------------------------------------------------------+
-| ``TERMINATED``  | Machine is terminated.                                              |
+
+The diagram below illustrates the state transistions that describe the lifecycle of a machine.
+
+.. image:: images/machinestates.png
+  :width: 700px
+
+The ``PENDING`` and ``RUNNING`` states are the *active machine states*. Only machines
+in one of the active states are counted when the cloud adapter determines the 
+effective pool size. The desired size of the machine pool should always be interpreted
+as the desired number of pool members in an active state.
+
+Just because a machine is active (``PENDING``, ``RUNNING``) doesn't necessarily 
+mean that it is doing useful work. For example, it may have failed to properly boot. 
+For active machines, a cloud adapter *may* (optionally) choose to include a *liveness state*, 
+which basically describes the operational state of the machine. The liveness state can
+be useful, for example, for work dispatchers or load balancers to know that a given machine
+is ready to accept work.
+
+The ``liveness`` attribute value is a string that may take on any of the following values:
+
+.. _liveness_state_table:
+
 +-----------------+---------------------------------------------------------------------+
-| ``STOPPING``    | Machine is stopping.                                                |
+| Liveness state  | Description                                                         |
++=================+=====================================================================+
+| ``BOOTING``     | The machine is being bootstrapped and may not (yet) be operational. |
 +-----------------+---------------------------------------------------------------------+
-| ``STOPPED``     | Machine is stopped.                                                 |
+| ``LIVE``        | The machine is operational (liveness tests pass).                   |
 +-----------------+---------------------------------------------------------------------+
+| ``UNHEALTHY``   | The machine may not be operational (liveness tests fail).           |
++-----------------+---------------------------------------------------------------------+
+| ``UNKNOWN``     | The liveness state of the machine is currently unknown              |
+|                 | (it may, for example, not have been possible to determine yet).     |
++-----------------+---------------------------------------------------------------------+
+
+One approach to monitor the livess state of machine pool members it to periodically 
+run *liveness tests* on the machine pool members. Such a test could for example be to run 
+an SSH command on each machine. A cloud adapter that doesn't monitor liveness for its machine 
+pool should always set the liveness state to ``UNKNOWN`` for all machines.
+
+
+The diagram below illustrates the state transistions for a machine's liveness.
+
+.. image:: images/liveness_states.png
+  :width: 500px
+
 
 Below is a sample machine pool document: ::
 
@@ -172,6 +225,7 @@ Below is a sample machine pool document: ::
       {
         "id": "i-123456",
         "state": "RUNNING",
+        "liveness": "LIVE",
         "launchtime": "2013-11-07T14:50:00.000Z",
         "publicIps": ["54.211.230.169"],
         "privateIps": ["10.122.122.69"],
@@ -182,6 +236,7 @@ Below is a sample machine pool document: ::
       {
         "id": "i-123457",
         "state": "PENDING",
+        "liveness": "BOOTING",
         "launchtime": "2013-11-07T13:49:50.000Z",        
         "publicIps": [],
         "privateIps": [],
