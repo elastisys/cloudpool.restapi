@@ -33,7 +33,7 @@ Operations
 ``POST /pool``
 **************
 
-  - Description: Sets the desired number of active machines in the machine pool.
+  - Description: Sets the desired number of *active* machines in the machine pool.
   
   - Input: The desired number of active machine instances in the pool as a :ref:`resize_request_message`.
 
@@ -69,6 +69,8 @@ Sample document: ::
 
      { "desiredCapacity": 3 }
 
+States that we want three active (``PENDING`` or ``RUNNING``) machine 
+instances in the pool.
 
 .. _error_response_message:
 

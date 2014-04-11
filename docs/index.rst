@@ -28,8 +28,9 @@ performs two primary tasks:
 
   * It answers requests about the members of the autoscaled machine pool.
 
-  * It carries out machine pool resize requests suggested by the autoscaler.
-
+  * It carries out machine pool resize requests suggested by the autoscaler
+    by commissioning/decommissioning machine instances so that the number of
+    *active* machines in the pool matches the desired pool size.
 
 The interface between the autoscaler and the cloud adapter is a REST API.
 All cloud adapters are required to implement this REST API and make it 
