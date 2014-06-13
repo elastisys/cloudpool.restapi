@@ -33,9 +33,9 @@ Operations
 ``POST /pool``
 **************
 
-  - Description: Sets the desired number of *active* machines in the machine pool.
+  - Description: Sets the desired number of machines in the machine pool.
   
-  - Input: The desired number of active machine instances in the pool as a :ref:`resize_request_message`.
+  - Input: The desired number of machine instances in the pool as a :ref:`resize_request_message`.
 
   - Output:
   
@@ -58,7 +58,7 @@ Resize request message
 
 +--------------+-----------------------------------------------------------+
 | Description  | A message used to request that the machine pool be        |
-|              | resized to a desired number of active machine instances.  |
+|              | resized to a desired number of machine instances.         |
 +--------------+-----------------------------------------------------------+
 | Content type |  ``application/json``                                     |
 +--------------+-----------------------------------------------------------+
@@ -69,8 +69,7 @@ Sample document: ::
 
      { "desiredCapacity": 3 }
 
-States that we want three active (``PENDING`` or ``RUNNING``) machine 
-instances in the pool.
+States that we want three machine instances in the pool.
 
 .. _error_response_message:
 
@@ -173,18 +172,19 @@ The ``state`` attribute value is a string that may take on any of the following 
 | ``TERMINATED``  | The machine has been stopped/shut down.                             |
 +-----------------+---------------------------------------------------------------------+
 
-The diagram below illustrates the state transistions that describe the lifecycle of a machine.
+The diagram below illustrates the state transitions that describe the lifecycle of a machine.
 
 .. image:: images/machinestates.png
   :width: 700px
 
-The ``PENDING`` and ``RUNNING`` states are the *active machine states*. Only machines
-in one of the active states are counted when the cloud adapter determines the 
-effective pool size. The desired size of the machine pool should always be interpreted
-as the desired number of pool members in an active state.
+At any time, the effective size of the machine pool should be interpreted as the
+number of allocated machines in a non-terminal state. That is, machines in one of 
+the states ``REQUESTED``, ``PENDING``, or ``RUNNING``.
 
-Just because a machine is active (``PENDING``, ``RUNNING``) doesn't necessarily 
-mean that it is doing useful work. For example, it may have failed to properly boot. 
+The ``PENDING`` and ``RUNNING`` states are said to be the *active machine 
+states*. Machines in an active state are executing. However, just because a machine 
+is active (``PENDING``, ``RUNNING``) doesn't necessarily mean that it is doing 
+useful work. For example, it may have failed to properly boot. 
 For active machines, a cloud adapter *may* (optionally) choose to include a *liveness state*, 
 which basically describes the operational state of the machine. The liveness state can
 be useful, for example, for work dispatchers or load balancers to know that a given machine
@@ -213,7 +213,7 @@ an SSH command on each machine. A cloud adapter that doesn't monitor liveness fo
 pool should always set the liveness state to ``UNKNOWN`` for all machines.
 
 
-The diagram below illustrates the state transistions for a machine's liveness.
+The diagram below illustrates the state transitions for a machine's liveness.
 
 .. image:: images/liveness_states.png
   :width: 500px
