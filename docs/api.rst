@@ -179,14 +179,15 @@ Set desired size
 
   - **Method**: ``POST /pool/size``
   - **Description**: Sets the desired number of machines in the machine pool.
-    This method is asynchronous and returns immediately without having modified
-    the machine pool. There may be a delay before the changes take effect and
-    are reflected in calls to :ref:`get_pool_size`.
+    This method is asynchronous and returns immediately after updating the
+    desired size. There may be a delay before the changes take effect and
+    are reflected in the machine pool.
 
-    Note: the cloud adapter should take measures to ensure that requested machines
-    are recognized as pool members. The specific mechanism to mark group members, 
-    which may depend on the features offered by the particular cloud API, is left 
-    to the implementation but could, for example, make use of tags.
+    Note: the cloud adapter should take measures to ensure that requested 
+    machines are recognized as pool members. The specific mechanism to mark 
+    group members, which may depend on the features offered by the particular
+    cloud API, is left to the implementation but could, for example, make use
+    of tags.
   - **Input**: The desired number of machine instances in the pool as a :ref:`set_desired_size_message`.
   - **Output**:
       - On success: HTTP response code 200 without message content.
