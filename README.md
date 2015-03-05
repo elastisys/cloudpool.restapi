@@ -26,4 +26,4 @@ After building, the documentation is available under the `docs/_build` directory
 
 Online documentation
 ====================
-The latest documentation can also be found online at http://cloudpoolapi.readthedocs.org/en/latest.
+The latest documentation can also be found online at http://cloudpoolrestapi.readthedocs.org/en/latest.
