@@ -1,15 +1,15 @@
-.. elastisys:scale cloud adapter REST API documentation master file, created by
+.. elastisys:scale cloud pool REST API documentation master file, created by
    sphinx-quickstart on Thu Jan 30 14:51:57 2014.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-elastisys:scale cloud adapter REST API
-======================================
+elastisys:scale cloud pool REST API
+===================================
 
-All `elastisys:scale <http://elastisys.com/scale>`_ cloud adapters 
+All `elastisys:scale <http://elastisys.com/scale>`_ cloud pool endpoints 
 are required to publish the REST API described below. 
 
-The primary purpose of the cloud adapter API is to serve as a bridge 
+The primary purpose of the cloud pool API is to serve as a bridge 
 between an autoscaler and a certain cloud provider, allowing the autoscaler 
 to operate in a cloud-neutral manner. As such, it focuses on primitives
 for managing a dynamic collection of machines.
@@ -27,17 +27,17 @@ Cloud providers differ in how they refer to the computational
 resources they provide. Some common terms are `instances`, `servers` and 
 `VMs`/`virtual machines`.
 
-The cloud adapter API strives to be as cloud-neutral as possible and 
+The cloud pool API strives to be as cloud-neutral as possible and 
 simply refers to the computational resources being managed as **machines**. 
-The logical group of machines that a cloud adapter manages is referred to
+The logical group of machines that a cloud pool manages is referred to
 as its **machine pool**.
 
 
-A cloud adapter needs to be able to report the execution state of its machine 
+A cloud pool needs to be able to report the execution state of its machine 
 pool members in a cloud-neutral manner (see :ref:`get_machine_pool`). 
 Since cloud providers differ quite a lot in the state models they use, the 
-cloud adapter needs to map the cloud-native state of the machine to one of 
-the **machine states** supported by the cloud adapter API. These states are 
+cloud pool needs to map the cloud-native state of the machine to one of 
+the **machine states** supported by the cloud pool API. These states are 
 described in the :ref:`machine state table <machine_state_table>` below.
 
 .. _machine_state_table:
@@ -76,18 +76,18 @@ have failed to properly boot, it may have crashed or encountered a fatal bug.
 There are cases where we need to be able to reason about the operational state of
 the service running on the machine. For example, we may not want to register a running
 machine to a load balancer until it is fully initialized and ready to accept requests.
-To this end, a cloud adapter may include a :ref:`service state <service_state_table>` 
+To this end, a cloud pool may include a :ref:`service state <service_state_table>` 
 for a machine. Whereas the `machine state` should be viewed  as the execution 
 state of the machine as reported by the cloud API, the **service state** of a machine
 is the operational health of the service running on the machine.
 
-A cloud adapter does not need to monitor the service state (health) of its machines,
-although it could. However, a cloud adapter is required to be ready to receive 
+A cloud pool does not need to monitor the service state (health) of its machines,
+although it could. However, a cloud pool is required to be ready to receive 
 service state updates (see :ref:`set_service_state`) for the machines in its pool 
 and to include those states on subsequent queries about the pool members 
 (:ref:`get_machine_pool`). A human operator or an external monitoring service should 
 be able to set the service state for a certain machine. In case no service state
-has been reported for a machine, the cloud adapter should report the machine as being
+has been reported for a machine, the cloud pool should report the machine as being
 in a service state of ``UNKNOWN``.
 
 The range of permissible service states are as follows:
@@ -116,7 +116,7 @@ The range of permissible service states are as follows:
 +---------------------+---------------------------------------------------------------------+
 
 The ``OUT_OF_SERVICE`` state marks a machine pool member as being taken out of service
-and awaiting troubleshooting. The cloud adapter should take measures to ensure that
+and awaiting troubleshooting. The cloud pool should take measures to ensure that
 a replacement machine is launched for any out-of-service machine.
 
 Except for the ``OUT_OF_SERVICE`` state, service states are only informational 
@@ -183,7 +183,7 @@ Set desired size
     desired size. There may be a delay before the changes take effect and
     are reflected in the machine pool.
 
-    Note: the cloud adapter should take measures to ensure that requested 
+    Note: the cloud pool should take measures to ensure that requested 
     machines are recognized as pool members. The specific mechanism to mark 
     group members, which may depend on the features offered by the particular
     cloud API, is left to the implementation but could, for example, make use

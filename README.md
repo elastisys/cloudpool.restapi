@@ -1,7 +1,7 @@
-adapter.restapi
-===============
+cloudpool.restapi
+=================
 
-This project hosts the documentation for elastisys:scale cloud adapter
+This project hosts the documentation for elastisys:scale cloud pool
 REST API.
 
 The HTML rendering of the documentation can be built as follows:
@@ -12,7 +12,7 @@ The HTML rendering of the documentation can be built as follows:
 
        `make virtualenv`
 
-       `. virtualenv.scaleadapter/bin/activate`
+       `. virtualenv.restapi/bin/activate`
 
   2. Install the required dependencies in this virtual environment:
 
@@ -26,4 +26,4 @@ After building, the documentation is available under the `docs/_build` directory
 
 Online documentation
 ====================
-The latest documentation can also be found online at http://cloudadapterapi.readthedocs.org/en/latest.
+The latest documentation can also be found online at http://cloudpoolapi.readthedocs.org/en/latest.
