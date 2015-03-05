@@ -2,7 +2,7 @@ cloudpool.restapi
 =================
 
 This project hosts the documentation for the 
-[elastisys:scale](http://elastisys.com/scale) cloud pool
+[elastisys:scale](http://elastisys.com) cloud pool
 REST API.
 
 The HTML rendering of the documentation can be built as follows:
