@@ -33,6 +33,10 @@ The logical group of machines that a cloud pool manages is referred to
 as its **machine pool**.
 
 
+.. _machine_state:
+
+machine state
+*************
 A cloud pool needs to be able to report the execution state of its machine 
 pool members in a cloud-neutral manner (see :ref:`get_machine_pool`). 
 Since cloud providers differ quite a lot in the state models they use, the 
@@ -66,29 +70,87 @@ The diagram below illustrates the state transitions that describe the lifecycle 
 a machine.
 
 .. image:: images/machinestates.png
-  :width: 700px
+  :width: 800px
 
-The ``PENDING`` and ``RUNNING`` states are said to be the *active machine 
-states*. Machines in an active state are executing. However, just because a machine 
-is active doesn't necessarily mean that it is doing useful work. For example, it may
+The ``PENDING`` and ``RUNNING`` states are said to be the *started machine 
+states*. Machines in a started state are executing. However, just because a machine 
+is executing doesn't necessarily mean that it is doing useful work. For example, it may
 have failed to properly boot, it may have crashed or encountered a fatal bug.
 
+So the machine state is the execution state of the machine, as reported by the cloud
+API, which really only tells us if a particular pool member is started or not.
+To be able to reason about the *health* of a pool member, each machine's metadata 
+carries two additional state fields -- the :ref:`membership_status` and the :ref:`service_state`.
+These states are intended to be set by external means, such as by a human operator
+or an external health monitoring service. A cloud pool is required to be ready to receive 
+state updates these fields (see :ref:`set_membership_status` and :ref:`set_service_state`)
+for the machines its pool and to include those states on subsequent queries about 
+the pool members (:ref:`get_machine_pool`).
+
+
+.. _membership_status:
+
+membership status
+*****************
+The **membership status** is used to indicate to the cloud pool that a certain
+machine needs to be given special treatment. The membership status can, for 
+example, be set to protect a machine from being terminated (by setting its 
+evictability) or to mark a machine as being in need of replacement (by setting 
+its activity flag). This allows us, for example, to isolate a failed machine for 
+further inspection and to provision a replacement to sustain sufficient capacity.
+It also allows us to have "blessed"/"seed" pool members that may not be 
+terminated. See the :ref:`set_membership_status` method for more deatils.
+
+The ``active`` and ``evictable`` fields of the membership status can be combined
+according to the table below to produce four main membership states:
+
+
++-------------------+------------+------------------+ 
+|                   | **active** | **not active**   |
++===================+============+==================+ 
+| **evictable**     | default    | disposable       | 
++-------------------+------------+------------------+ 
+| **not evictable** | blessed    | awaiting service | 
++-------------------+------------+------------------+ 
+
+
+
+  - ``default``: a machine that is both an active and evictable group member.
+
+  - ``blessed``: a machine that is a permanent pool member that cannot be 
+    evicted. This can, for example, be used to include `reserved machine 
+    instances <http://aws.amazon.com/ec2/purchasing-options/reserved-instances/>`_
+    in the pool.
+
+  - ``awaiting service``: a machine that is in need of service. The machine
+    is to be replaced and should be kept alive for troubleshooting.
+
+  - ``disposable``: a machine that is non-functioning and should be replaced 
+    and terminated.
+
+
+At any time, the *active size* of the cloud pool should be interpreted as the
+number of allocated machines that have not been marked with an inactive membership 
+status. That is, all machines in one of the machine states ``REQUESTED``, ``PENDING``, 
+or ``RUNNING`` and *not* having a membership status with ``active`` set to ``false``.
+
+
+
+
+.. _service_state:
+
+service state
+*************
 There are cases where we need to be able to reason about the operational state of
 the service running on the machine. For example, we may not want to register a running
-machine to a load balancer until it is fully initialized and ready to accept requests.
-To this end, a cloud pool may include a :ref:`service state <service_state_table>` 
-for a machine. Whereas the `machine state` should be viewed  as the execution 
-state of the machine as reported by the cloud API, the **service state** of a machine
-is the operational health of the service running on the machine.
-
-A cloud pool does not need to monitor the service state (health) of its machines,
-although it could. However, a cloud pool is required to be ready to receive 
-service state updates (see :ref:`set_service_state`) for the machines in its pool 
-and to include those states on subsequent queries about the pool members 
-(:ref:`get_machine_pool`). A human operator or an external monitoring service should 
-be able to set the service state for a certain machine. In case no service state
-has been reported for a machine, the cloud pool should report the machine as being
-in a service state of ``UNKNOWN``.
+machine to a load balancer until it is fully initialized and ready to accept requests, and
+we may want to unregister unhealthy machines. To this end, a cloud pool may include 
+a **service state** for a machine. Whereas the *machine state*
+should be viewed  as the execution state of the *machine*, 
+the *service state* should be viewed as the operational health of the 
+*service running on the machine*. Service states have no semantic implications to the
+cloud pool. They should be regarded as informational "marker states" that may be used
+by third party services (such as a load balancer).
 
 The range of permissible service states are as follows:
 
@@ -104,31 +166,14 @@ The range of permissible service states are as follows:
 +---------------------+---------------------------------------------------------------------+
 | ``UNHEALTHY``       | The service is not functioning properly (health checks fail).       |
 +---------------------+---------------------------------------------------------------------+
-| ``OUT_OF_SERVICE``  | The service is unhealthy and is in need of repair. It should be     |
-|                     | considered out of service and not able to accept work until it      |
-|                     | has recovered. When this service state is set for a machine, a      |  
-|                     | replacement instance will be launched, as the machine is no         |
-|                     | longer considered part of the active machine pool (even if it is    |
-|                     | in machine state ``RUNNING``).                                      |
+| ``OUT_OF_SERVICE``  | The service is unhealthy and has been taken out of service for      |
+|                     | troubleshooting and/or repair.                                      |
 +---------------------+---------------------------------------------------------------------+
 | ``UNKNOWN``         | The service state of the machine cannot be (or has not yet been)    |
 |                     | determined.                                                         |
 +---------------------+---------------------------------------------------------------------+
 
-The ``OUT_OF_SERVICE`` state marks a machine pool member as being taken out of service
-and awaiting troubleshooting. The cloud pool should take measures to ensure that
-a replacement machine is launched for any out-of-service machine.
-
-Except for the ``OUT_OF_SERVICE`` state, service states are only informational 
-"marker states" that, for example, can be used to monitor service health and
-register machines with a load balancer as they become ``IN_SERVICE`` and unregister
-them when in state ``UNHEALTHY`` or ``OUT_OF_SERVICE``.
-
-At any time, the *effective size* of the machine pool should be interpreted as the
-number of allocated machines that have not been marked out-of-service (awaiting 
-troubleshooting/repair). That is, all machines in one of the machine states 
-``REQUESTED``, ``PENDING``, or ``RUNNING`` and *not* being in service state 
-``OUT_OF_SERVICE``.
+See the :ref:`set_service_state` method for more deatils.
 
 
 
@@ -144,13 +189,24 @@ Get machine pool
   
   - **Method**: ``GET /pool``
   - **Description**: Retrieves the current machine pool members.
-    
-    Note that the returned machines may be in any :ref:`machine state <machine_state_table>`
-    (``REQUESTED``, ``RUNNING``, ``TERMINATED``, etc). The machines that are considered part of 
-    the active pool are machines in machine states ``REQUESTED``, ``PENDING`` or
-    ``RUNNING`` and that are *not* in service state ``OUT_OF_SERVICE``. The 
-    :ref:`service state <service_state_table>` should be reported as ``UNKNOWN`` for machine instances that have 
-    not had any service state reported (see :ref:`set_service_state`).
+
+    Note that the returned machines may be in any :ref:`machine_state`
+    (``REQUESTED``, ``RUNNING``, ``TERMINATED``, etc).
+
+    The :ref:`membership_status` of a started machine determines if
+    it is to be considered an active member of the pool.The *active size* 
+    of the machine pool should be interpreted as the number of allocated 
+    machines (in any of the non-terminal machine states ``REQUESTED``,
+    ``PENDING`` or ``RUNNING`` that have not been marked with an inactive
+    :ref:`membership_status`.
+
+    The :ref:`service_state` should be set to ``UNKNOWN`` for all machine instances 
+    for which no service state has been reported (see :ref:`set_service_state`).
+
+    Similarly, the :ref:`membership_status` should be set to the default 
+    (active, evictable) status for all machine instances for which no membership 
+    status has been reported (see :ref:`set_membership_status`).
+
   - **Input**: None
   - **Output**: 
       - On success: HTTP response code 200 with a :ref:`machine_pool_message`
@@ -218,18 +274,43 @@ Terminate machine
 
 
 
+.. _set_membership_status:
+
+Set membership status
+*********************
+
+  - **Method**: ``POST /pool/<machineId>/membershipStatus``
+  - **Description**:  Sets the :ref:`membership_status` of a given pool member.
+
+    The membership status for a machine can be set to protect the machine
+    from being terminated (by setting its evictability status) and/or to mark
+    a machine as being in need of replacement by flagging it as an inactive
+    pool member.
+
+    The specific mechanism to mark group members, which may depend on the 
+    features offered by the particular cloud API, is left to the 
+    implementation but could, for example, make use of tags.
+  - **Input**: A :ref:`set_membership_status_message`.
+  - **Output**:
+      - On success: HTTP response code 200 without message content.
+      - On error:    
+          - on illegal input: code 400 with an :ref:`error_response_message`
+          - if the machine is not a pool member: code 404 with an :ref:`error_response_message`
+          - otherwise: HTTP response code 500 with an :ref:`error_response_message`
+
+
 .. _set_service_state:
 
 Set service state
 *****************
 
   - **Method**: ``POST /pool/<machineId>/serviceState``
-  - **Description**:  Sets the service state of a machine pool member with
-    id ``<machineId>``. Setting the service state has no side-effects, unless 
-    the service state is set to ``OUT_OF_SERVICE``, in which case a replacement 
-    machine will (eventually) be launched since out-of-service machines are not 
-    considered effective members of the pool. An out-of-service machine can later 
-    be taken back into service by another call to this method to re-set its service state.
+  - **Description**: Sets the :ref:`service_state` of a given machine pool member. 
+ 
+    Setting the service state does not have any functional implications on the pool
+    member, but should be seen as way to supply operational information about
+    the service running on the machine to third-party services (such as load
+    balancers).
 
     The specific mechanism to mark group 
     members, which may depend on the features offered by the particular cloud 
@@ -354,6 +435,7 @@ Here, every ``<machine>`` is also a json document with the following structure: 
   {
     "id": <string>,
     "machineState": <machine state>,
+    "membershipStatus": {"active": bool, "evictable": bool},
     "serviceState": <service state>,
     "launchtime": <iso-8601 datetime>,
     "publicIps": [<ip-address>, ...],
@@ -364,11 +446,10 @@ Here, every ``<machine>`` is also a json document with the following structure: 
 The attributes are to be interpreted as follows:
   
   * ``id``: The identifier of the machine.
-  * ``machineState``: The execution state of the machine. See the 
-    :ref:`machine state table <machine_state_table>` for the range of possible values.
+  * ``machineState``: The execution state of the machine. See the section on :ref:`machine_state`.
+  * ``membershipStatus``: The :ref:`membership_status` of the machine.
   * ``serviceState``: The operational state of the service running on the machine.
-    See the :ref:`service state table <service_state_table>` for the range of 
-    possible values.
+    See the section on :ref:`service_state`.
   * ``launchtime``: The launch time of the machine if it has been launched. If the machine
     is in a state where it hasn't been launched yet (``REQUESTED`` state) this attribute
     may be left out or set to ``null``.
@@ -389,6 +470,7 @@ Below is a sample machine pool document: ::
       {
         "id": "i-123456",
         "machineState": "RUNNING",
+        "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "IN_SERVICE",
         "launchtime": "2013-11-07T14:50:00.000Z",
         "publicIps": ["54.211.230.169"],
@@ -400,6 +482,7 @@ Below is a sample machine pool document: ::
       {
         "id": "i-123457",
         "machineState": "PENDING",
+        "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "BOOTING",
         "launchtime": "2013-11-07T13:49:50.000Z",        
         "publicIps": [],
@@ -423,7 +506,7 @@ Pool size message
 | Description  | Carries information about the pool size, both                                         |
 |              | desired and actual size.                                                              |
 +--------------+---------------------------------------------------------------------------------------+
-| Schema       | ``{ "desiredSize": <number>, "allocated": <number>, "outOfService": <number> }``      |
+| Schema       | ``{ "desiredSize": <number>, "allocated": <number>, "active": <number> }``            |
 +--------------+---------------------------------------------------------------------------------------+
 
 The attributes are to be interpreted as follows:
@@ -431,12 +514,11 @@ The attributes are to be interpreted as follows:
   * ``desiredSize``: The last desired size set for the machine pool (see :ref:`set_desired_size`).
   * ``allocated``: The number of allocated machines in the pool (in one of 
     machine states ``REQUESTED``, ``PENDING``, ``RUNNING``)
-  * ``outOfService``: The number of machines in the pool that are marked with 
-    a ``OUT_OF_SERVICE`` service state.
+  * ``active``: The number of machines in the pool with an ``active`` :ref:`membership_status`.
 
 Example: ::
 
-   { "desiredSize": 3, "allocated": 4, "outOfService": 1 }
+   { "desiredSize": 3, "allocated": 4, "active": 3 }
 
 
 
@@ -487,6 +569,36 @@ The attributes are to be interpreted as follows:
 Example where a replacement machine is desired: ::
 
    { "decrementDesiredSize": false }
+
+
+
+.. _set_membership_status_message:
+
+Set membership status message
+*****************************
+
++--------------+-----------------------------------------------------------------+
+| Description  | Specifies the membership status for a machine.                  |
++--------------+-----------------------------------------------------------------+
+| Schema       | ``{ "membershipStatus": {"active": bool, "evictable": bool} }`` |
++--------------+-----------------------------------------------------------------+
+
+The attributes are to be interpreted as follows:
+  
+  * ``active``: Indicates if this is an active (working) pool member. A ``true``
+    value indicates that this machine is a functioning pool member. A
+    ``false`` value indicates that a replacement machine needs to be launched 
+    for this pool member.
+  * ``evictable``: Indicates if this machine is a blessed member of the
+    machine pool. That is, if this field is ``true``, the cloud pool may not 
+    select this machine for termination when pool needs to be scaled in.
+
+Example of a membership status for a broken machine that needs a replacement
+(``active`` == ``false``), but is to be kept around in the pool for troubleshooting
+(``evictable`` == ``false``): ::
+
+   { "membershipStatus": {"active": false, "evictable": false} }
+
 
 
 
