@@ -1,12 +1,12 @@
-.. elastisys:scale cloud pool REST API documentation master file, created by
+.. elastisys cloud pool REST API documentation master file, created by
    sphinx-quickstart on Thu Jan 30 14:51:57 2014.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-elastisys:scale cloud pool REST API
-===================================
+elastisys cloud pool REST API
+=============================
 
-All `elastisys:scale <http://elastisys.com/scale>`_ cloud pool endpoints 
+All `elastisys <http://elastisys.com/>`_ cloud pool endpoints 
 are required to publish the REST API described below. 
 
 The primary purpose of the cloud pool API is to serve as a bridge 
@@ -181,6 +181,24 @@ See the :ref:`set_service_state` method for more deatils.
 Operations
 ----------
 
+.. _get_metadata:
+
+Get metadata
+************
+
+ - **Method**: ``GET /pool/metadata``
+ - **Description**: Retrieves metadata about the cloud adapter and the cloud
+   infrastructure.
+
+   The metadata is a simple JSON document that shows what API version(s) this
+   cloud pool supports, whether the cloud infrastructure supports returning
+   a dependable value for when a machine was requested, and a unique identifier
+   for the cloud infrastructure.
+
+ - **Input**: None
+ - **Output**: 
+      - On success: HTTP response code 200 with a :ref:`metadata_message`
+      - On error: HTTP response code 500 with an :ref:`error_response_message`
 
 .. _get_machine_pool:
 
@@ -370,6 +388,36 @@ Attach machine
 
 Messages
 --------
+
+.. _metadata_message:
+
+Metadata message
+****************
+
++--------------+-----------------------------------------------------------+
+| Description  | A message used to disclose metadata about the cloud pool  |
+|              | and the cloud infrastructure it manages.                  |
++--------------+-----------------------------------------------------------+
+
+The metadata message has the following schema: ::
+
+    { 
+      "supportedApiVersions": [<version strings>],
+      "cloudSupportsRequesttime": <boolean>,
+      "poolIdentifier": <string>
+    }
+    
+The version strings all follow this regular expression: ::
+
+    \d+(.\d+)?
+
+Sample document: ::
+
+    { 
+      "supportedApiVersions": ["1", "2.0", "3.14"],
+      "poolIdentifier": "AWS_EC2",
+      "cloudSupportsRequesttime": false
+    }
 
 .. _set_desired_size_message:
 
