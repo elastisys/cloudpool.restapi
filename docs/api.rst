@@ -192,7 +192,7 @@ Get metadata
 ************
 
  - **Method**: ``GET /pool/metadata``
- - **Description**: Retrieves metadata about the cloud adapter and the cloud
+ - **Description**: Retrieves metadata about the cloud pool and its cloud
    infrastructure.
 
    The metadata is a simple JSON document that shows what API version(s) this
