@@ -27,22 +27,23 @@ Cloud providers differ in how they refer to the computational
 resources they provide. Some common terms are `instances`, `servers` and 
 `VMs`/`virtual machines`.
 
-The cloud pool API strives to be as cloud-neutral as possible and 
-simply refers to the computational resources being managed as **machines**. 
-The logical group of machines that a cloud pool manages is referred to
-as its **machine pool**.
+The cloud pool API strives to be as cloud-neutral as possible and simply refers
+to the computational resources being managed as **machines**.  The logical
+group of machines that a cloud pool manages is referred to as its **machine
+pool**.
 
 
 .. _machine_state:
 
 machine state
 *************
-A cloud pool needs to be able to report the execution state of its machine 
-pool members in a cloud-neutral manner (see :ref:`get_machine_pool`). 
-Since cloud providers differ quite a lot in the state models they use, the 
-cloud pool needs to map the cloud-native state of the machine to one of 
-the **machine states** supported by the cloud pool API. These states are 
-described in the :ref:`machine state table <machine_state_table>` below.
+
+A cloud pool needs to be able to report the execution state of its machine pool
+members in a cloud-neutral manner (see :ref:`get_machine_pool`).  Since cloud
+providers differ quite a lot in the state models they use, the cloud pool needs
+to map the cloud-native state of the machine to one of the **machine states**
+supported by the cloud pool API. These states are described in the
+:ref:`machine state table <machine_state_table>` below.
 
 .. _machine_state_table:
 
@@ -66,26 +67,30 @@ described in the :ref:`machine state table <machine_state_table>` below.
 | ``TERMINATED``  | The machine has been stopped/shut down.                             |
 +-----------------+---------------------------------------------------------------------+
 
-The diagram below illustrates the state transitions that describe the lifecycle of 
-a machine.
+The diagram below illustrates the state transitions that describe the lifecycle
+of a machine.
 
 .. image:: images/machinestates.png
   :width: 800px
 
-The ``PENDING`` and ``RUNNING`` states are said to be the *started machine 
-states*. Machines in a started state are executing. However, just because a machine 
-is executing doesn't necessarily mean that it is doing useful work. For example, it may
-have failed to properly boot, it may have crashed or encountered a fatal bug.
+The ``PENDING`` and ``RUNNING`` states are said to be the *started machine
+states*. Machines in a started state are executing. However, just because a
+machine is executing doesn't necessarily mean that it is doing useful work. For
+example, it may have failed to properly boot, it may have crashed or
+encountered a fatal bug.
 
-So the machine state is the execution state of the machine, as reported by the cloud
-API, which really only tells us if a particular pool member is started or not.
-To be able to reason about the *health* of a pool member, each machine's metadata 
-carries two additional state fields -- the :ref:`membership_status` and the :ref:`service_state`.
-These states are intended to be set by external means, such as by a human operator
-or an external health monitoring service. A cloud pool is required to be ready to receive 
-state updates these fields (see :ref:`set_membership_status` and :ref:`set_service_state`)
-for the machines its pool and to include those states on subsequent queries about 
-the pool members (:ref:`get_machine_pool`).
+So the machine state is the execution state of the machine, as reported by the
+cloud API, which really only tells us if a particular pool member is started or
+not.  To be able to reason about the *health* of a pool member, each machine's
+metadata carries two additional state fields -- the :ref:`membership_status`
+and the :ref:`service_state`.
+
+These states are intended to be set by external means, such as by a human
+operator or an external health monitoring service. A cloud pool is required to
+be ready to receive state updates these fields (see
+:ref:`set_membership_status` and :ref:`set_service_state`) for the machines its
+pool and to include those states on subsequent queries about the pool members
+(:ref:`get_machine_pool`).
 
 
 .. _membership_status:
@@ -191,8 +196,8 @@ Get metadata
    infrastructure.
 
    The metadata is a simple JSON document that shows what API version(s) this
-   cloud pool supports, whether the cloud infrastructure supports returning
-   a dependable value for when a machine was requested, and a unique identifier
+   cloud pool supports, whether the cloud infrastructure supports returning a
+   dependable value for when a machine was requested, and a unique identifier
    for the cloud infrastructure.
 
  - **Input**: None
