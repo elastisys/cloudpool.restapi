@@ -408,7 +408,6 @@ The metadata message has the following schema: ::
 
     { 
       "supportedApiVersions": [<version strings>],
-      "cloudSupportsRequesttime": <boolean>,
       "poolIdentifier": <string>
     }
     
@@ -420,8 +419,7 @@ Sample document: ::
 
     { 
       "supportedApiVersions": ["1", "2.0", "3.14"],
-      "poolIdentifier": "AWS_EC2",
-      "cloudSupportsRequesttime": false
+      "poolIdentifier": "AWS_EC2"
     }
 
 .. _set_desired_size_message:
