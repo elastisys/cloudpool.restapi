@@ -615,7 +615,8 @@ Here, every ``<machine>`` is also a json document with the following structure: 
     "machineState": <machine state>,
     "membershipStatus": {"active": bool, "evictable": bool},
     "serviceState": <service state>,
-    "launchtime": <iso-8601 datetime>,
+    "launchTime": <iso-8601 datetime>,
+    "requestTime": <iso-8601 datetime>,
     "publicIps": [<ip-address>, ...],
     "privateIps": [<ip-address>, ...],
     "metadata": <jsonobject>
@@ -628,7 +629,9 @@ The attributes are to be interpreted as follows:
   * ``membershipStatus``: The :ref:`membership_status` of the machine.
   * ``serviceState``: The operational state of the service running on the machine.
     See the section on :ref:`service_state`.
-  * ``launchtime``: The launch time of the machine if it has been launched. If the machine
+  * ``requestTime``: The request time of the machine if one can be determined by the underlying 
+    infrastructure. Since not all infrastructures support this, it may be left out or set to ``null``.
+  * ``launchTime``: The launch time of the machine if it has been launched. If the machine
     is in a state where it hasn't been launched yet (``REQUESTED`` state) this attribute
     may be left out or set to ``null``.
   * ``publicIps``: The list of public IP addresses associated with this machine. Depending
@@ -650,7 +653,8 @@ Below is a sample machine pool document: ::
         "machineState": "RUNNING",
         "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "IN_SERVICE",
-        "launchtime": "2013-11-07T14:50:00.000Z",
+        "requestTime": "2013-11-07T14:48:00.000Z",
+        "launchTime": "2013-11-07T14:50:00.000Z",
         "publicIps": ["54.211.230.169"],
         "privateIps": ["10.122.122.69"],
         "metadata": {
@@ -662,7 +666,8 @@ Below is a sample machine pool document: ::
         "machineState": "PENDING",
         "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "BOOTING",
-        "launchtime": "2013-11-07T13:49:50.000Z",        
+        "requestTime": "2013-11-07T13:47:50.000Z",        
+        "launchTime": "2013-11-07T13:49:50.000Z",        
         "publicIps": [],
         "privateIps": [],
         "metadata": {
