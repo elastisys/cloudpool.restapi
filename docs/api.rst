@@ -186,6 +186,109 @@ See the :ref:`set_service_state` method for more deatils.
 Operations
 ----------
 
+.. _set_config:
+
+Set configuration
+*****************
+
+ - **Method**: ``POST /config``
+ - **Description**: Sets a new configuration for the cloud pool.
+
+   The configuration is a JSON document whose appearance depends on the particular
+   cloud pool implementation.
+
+   This operation will not change the cloud pool's started state -- if the
+   cloud pool had been started (see :ref:`start`) it will remain started, and if it was
+   in a stopped state it will remain stopped.
+
+ - **Input**: A JSON document with a configuration that follows the schema of
+   the particular cloud pool implementation.   
+ - **Output**: 
+      - on success: HTTP response code 200.
+      - on invalid input (for example, if the cloud pool fails to validate the
+	configuration): HTTP response code 400 (Bad Request) with an
+	:ref:`error_response_message`.
+      - other errors: HTTP response code 500 with an
+	:ref:`error_response_message`
+
+
+.. _get_config:
+
+Get configuration
+*****************
+
+ - **Method**: ``GET /config``
+ - **Description**: Retrieves the configuration currently set for the
+   cloud pool (if any).
+
+   The configuration is a JSON document whose appearance depends on the particular
+   cloud pool implementation.
+
+ - **Input**: None
+ - **Output**: 
+      - HTTP response code 200 with a configuration JSON document on success.
+      - HTTP response code 404 (Not Found) if no configuration has been set.
+      - On error: HTTP response code 500 with an :ref:`error_response_message`
+
+
+	
+.. _start:
+
+Start
+*****
+
+ - **Method**: ``POST /start``
+ - **Description**: Starts the cloud pool.
+
+   This will set the cloud pool in an activated state where it will start to
+   accept requests to query or modify the machine pool.
+
+   If the cloud pool has not been configured (see :ref:`set_config`) the
+   method will fail. If the cloud pool is already started this is a no-op.
+
+ - **Input**: None
+ - **Output**: 
+      - HTTP response code 200 on success.
+      - HTTP response code 400 (Bad Request) with an :ref:`error_response_message`
+	on an attempt to start an unconfigured cloud pool.
+      - HTTP response code 500 with an :ref:`error_response_message` on error.
+
+
+.. _stop:
+
+Stop
+****
+
+ - **Method**: ``POST /stop``
+ - **Description**: Stops the cloud pool.
+
+   A stopped cloud pool is in a passivated state and will not accept
+   any requests to query or modify the machine pool.
+   
+   If the cloud pool is already in a stopped state this is a no-op.
+
+ - **Input**: None
+ - **Output**: 
+      - HTTP response code 200 on success.
+      - HTTP response code 500 with an :ref:`error_response_message` on error.
+
+
+
+.. _get_status:
+
+Get status
+**********
+
+ - **Method**: ``GET /status``
+ - **Description**: Retrieves the execution status for the cloud pool.
+
+ - **Input**: None
+ - **Output**: 
+      - HTTP response code 200 on success with a :ref:`status_message`.
+      - HTTP response code 500 with an :ref:`error_response_message` on error.
+
+
+
 .. _get_metadata:
 
 Get metadata
@@ -196,9 +299,7 @@ Get metadata
    infrastructure.
 
    The metadata is a simple JSON document that shows what API version(s) this
-   cloud pool supports, whether the cloud infrastructure supports returning a
-   dependable value for when a machine was requested, and a unique identifier
-   for the cloud infrastructure.
+   cloud pool supports, and a unique identifier for the cloud infrastructure.
 
  - **Input**: None
  - **Output**: 
@@ -394,6 +495,31 @@ Attach machine
 Messages
 --------
 
+.. _status_message:
+
+Status message
+**************
+
++--------------+-----------------------------------------------------------+
+| Description  | A message used to report the state of the cloud pool.     |
++--------------+-----------------------------------------------------------+
+
+The status message has the following schema: ::
+
+    { 
+      "started": <boolean>,
+      "configured": <boolean>
+    }
+    
+Sample document: ::
+
+    { 
+      "started": true,
+      "configured": true
+    }
+
+
+
 .. _metadata_message:
 
 Metadata message
@@ -408,7 +534,6 @@ The metadata message has the following schema: ::
 
     { 
       "supportedApiVersions": [<version strings>],
-      "cloudSupportsRequesttime": <boolean>,
       "poolIdentifier": <string>
     }
     
@@ -420,10 +545,10 @@ Sample document: ::
 
     { 
       "supportedApiVersions": ["1", "2.0", "3.14"],
-      "poolIdentifier": "AWS_EC2",
-      "cloudSupportsRequesttime": false
+      "poolIdentifier": "AWS_EC2"
     }
 
+    
 .. _set_desired_size_message:
 
 Set desired size message
