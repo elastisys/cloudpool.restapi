@@ -615,6 +615,8 @@ Here, every ``<machine>`` is also a json document with the following structure: 
     "machineState": <machine state>,
     "membershipStatus": {"active": bool, "evictable": bool},
     "serviceState": <service state>,
+    "cloudProvider": <string>,
+    "machineSize": <string>,
     "launchTime": <iso-8601 datetime>,
     "requestTime": <iso-8601 datetime>,
     "publicIps": [<ip-address>, ...],
