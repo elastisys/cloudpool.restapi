@@ -629,6 +629,13 @@ The attributes are to be interpreted as follows:
   * ``membershipStatus``: The :ref:`membership_status` of the machine.
   * ``serviceState``: The operational state of the service running on the machine.
     See the section on :ref:`service_state`.
+  * ``cloudProvider``: The name of the cloud provider that this machine origins from, for example
+    `AWS-EC2`. It might not be immediately apparent why this field is required since the
+    cloud pool itself states which cloud provider it supports, but it is useful to distinguish
+    where different machines originate from in multi-cloud scenarios where multiple down-stream
+    cloud pools are abstracted by an upstream aggregating cloud pool (such as a splitter pool).
+  * ``machineSize``: The size of the machine (or instance type, in Amazon EC2 terminology). For example,
+    `m1.medium` for an Amazon EC2 machine.
   * ``requestTime``: The request time of the machine if one can be determined by the underlying 
     infrastructure. Since not all infrastructures support this, it may be left out or set to ``null``.
   * ``launchTime``: The launch time of the machine if it has been launched. If the machine
@@ -651,6 +658,8 @@ Below is a sample machine pool document: ::
       {
         "id": "i-123456",
         "machineState": "RUNNING",
+	"cloudProvider": "AWS_EC2",
+	"machineSize": "m1.small",
         "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "IN_SERVICE",
         "requestTime": "2013-11-07T14:48:00.000Z",
@@ -664,6 +673,8 @@ Below is a sample machine pool document: ::
       {
         "id": "i-123457",
         "machineState": "PENDING",
+	"cloudProvider": "AWS_EC2",
+	"machineSize": "m1.small",	
         "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "BOOTING",
         "requestTime": "2013-11-07T13:47:50.000Z",        
