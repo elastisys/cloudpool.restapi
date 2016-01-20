@@ -683,17 +683,18 @@ acted upon.
 Every ``<machine>`` entry is a json object with the following structure: ::
 
   {
-    "id": <string>,
-    "machineState": <machine state>,
+    "id":               <string>,
+    "machineState":     <machine state>,
     "membershipStatus": {"active": bool, "evictable": bool},
-    "serviceState": <service state>,
-    "cloudProvider": <string>,
-    "machineSize": <string>,
-    "launchTime": <iso-8601 datetime>,
-    "requestTime": <iso-8601 datetime>,
-    "publicIps": [<ip-address>, ...],
-    "privateIps": [<ip-address>, ...],
-    "metadata": <jsonobject>
+    "serviceState":     <service state>,
+    "cloudProvider":    <string>,
+    "region":           <string>,
+    "machineSize":      <string>,
+    "launchTime":       <iso-8601 datetime>,
+    "requestTime":      <iso-8601 datetime>,
+    "publicIps":        [<ip-address>, ...],
+    "privateIps":       [<ip-address>, ...],
+    "metadata":         <jsonobject>
   } 
 
 The attributes are to be interpreted as follows:
@@ -703,11 +704,15 @@ The attributes are to be interpreted as follows:
   * ``membershipStatus``: The :ref:`membership_status` of the machine.
   * ``serviceState``: The operational state of the service running on the machine.
     See the section on :ref:`service_state`.
-  * ``cloudProvider``: The name of the cloud provider that this machine origins from, for example
+  * ``cloudProvider``: The name of the cloud provider that this machine originates from, for example
     `AWS-EC2`. It might not be immediately apparent why this field is required since the
     cloud pool itself states which cloud provider it supports, but it is useful to distinguish
     where different machines originate from in multi-cloud scenarios where multiple down-stream
     cloud pools are abstracted by an upstream aggregating cloud pool (such as a splitter pool).
+  * ``region``: The name of the cloud region/zone/data center where this
+    machine is located. For example, `us-east-1`. As for
+    the ``cloudProvider`` attribute, this attribute can be useful to an upstream
+    component that collects machines from multiple cloud pools.
   * ``machineSize``: The size of the machine (or instance type, in Amazon EC2 terminology). For example,
     `m1.medium` for an Amazon EC2 machine.
   * ``requestTime``: The request time of the machine if one can be determined by the underlying 
@@ -733,6 +738,7 @@ Below is a sample machine pool document: ::
         "id": "i-123456",
         "machineState": "RUNNING",
 	"cloudProvider": "AWS_EC2",
+	"region": "us-east-1",
 	"machineSize": "m1.small",
         "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "IN_SERVICE",
@@ -748,6 +754,7 @@ Below is a sample machine pool document: ::
         "id": "i-123457",
         "machineState": "PENDING",
 	"cloudProvider": "AWS_EC2",
+	"region": "us-east-1",
 	"machineSize": "m1.small",	
         "membershipStatus": {"active": true, "evictable": true},
         "serviceState": "BOOTING",
