@@ -333,24 +333,6 @@ Get status
 
 
 
-.. _get_metadata:
-
-Get metadata
-************
-
- - **Method**: ``GET /pool/metadata``
- - **Description**: Retrieves metadata about the cloud pool and its cloud
-   infrastructure.
-
-   The metadata is a simple JSON document that shows what API version(s) this
-   cloud pool supports, and a unique identifier for the cloud infrastructure.
-
- - **Input**: None
- - **Output**: 
-      - On success: HTTP response code 200 with a :ref:`metadata_message`
-      - On error: HTTP response code 500 (Internal Server Error) with
-	an :ref:`error_response_message`
-
 .. _get_machine_pool:
 
 Get machine pool
@@ -582,36 +564,6 @@ Sample document: ::
     { 
       "started": true,
       "configured": true
-    }
-
-
-
-.. _metadata_message:
-
-Metadata message
-****************
-
-+--------------+-----------------------------------------------------------+
-| Description  | A message used to disclose metadata about the cloud pool  |
-|              | and the cloud infrastructure it manages.                  |
-+--------------+-----------------------------------------------------------+
-
-The metadata message has the following schema: ::
-
-    { 
-      "supportedApiVersions": [<version strings>],
-      "poolIdentifier": <string>
-    }
-    
-The version strings all follow this regular expression: ::
-
-    \d+(.\d+)?
-
-Sample document: ::
-
-    { 
-      "supportedApiVersions": ["1", "2.0", "3.14"],
-      "poolIdentifier": "AWS_EC2"
     }
 
     
