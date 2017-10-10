@@ -415,8 +415,8 @@ Set desired size
 Terminate machine
 *****************
 
-  - **Method**: ``POST /pool/<machineId>/terminate``
-  - **Description**: Terminates a particular machine pool member with id ``<machineId>``.
+  - **Method**: ``POST /pool/terminate``
+  - **Description**: Terminates a particular machine pool member.
     The caller can control if a replacement machine is to be provisioned via the
     ``decrementDesiredSize``
     parameter. 
@@ -439,7 +439,7 @@ Terminate machine
 Set membership status
 *********************
 
-  - **Method**: ``POST /pool/<machineId>/membershipStatus``
+  - **Method**: ``POST /pool/membershipStatus``
   - **Description**:  Sets the :ref:`membership_status` of a given pool member.
 
     The membership status for a machine can be set to protect the machine
@@ -467,7 +467,7 @@ Set membership status
 Set service state
 *****************
 
-  - **Method**: ``POST /pool/<machineId>/serviceState``
+  - **Method**: ``POST /pool/serviceState``
   - **Description**: Sets the :ref:`service_state` of a given machine pool member. 
  
     Setting the service state does not have any functional implications on the pool
@@ -496,9 +496,9 @@ Set service state
 Detach machine
 **************
 
-  - **Method**: ``POST /pool/<machineId>/detach``
-  - **Description**: Removes a particular machine pool member with id ``<machineId>``
-    from the pool without terminating it. 
+  - **Method**: ``POST /pool/detach``
+  - **Description**: Removes a particular machine pool member from the pool
+    without terminating it. 
     The machine keeps running but is no longer considered a pool member and,
     therefore, needs to be managed independently. The caller can control if 
     a replacement machine is to be provisioned via the ``decrementDesiredSize``
@@ -522,9 +522,9 @@ Attach machine
 **************
 
 
-  - **Method**: ``POST /pool/<machineId>/attach``
-  - **Description**: Attaches an already running machine with a given 
-    ``<machineId>`` to the machine pool, growing the pool with a new member.
+  - **Method**: ``POST /pool/attach``
+  - **Description**: Attaches an already running machine to the machine pool,
+    growing the pool with a new member.
     This operation implies that the desired size of the group is incremented by one.
   - **Input**: None
   - **Output**:
@@ -759,22 +759,24 @@ Terminate machine message
 *************************
 
 +--------------+-----------------------------------------------------------------+
-| Description  | Specifies if the desired size of the machine pool               |
+| Description  | Specifies which pool member to terminate and if the desired     |
+|              | size of the machine pool                                        |
 |              | should be decremented after terminating the machine             |
 |              | (that is, it controls if a replacement machine should           |
 |              | be launched)                                                    |
 +--------------+-----------------------------------------------------------------+
-| Schema       | ``{ "decrementDesiredSize": <boolean> }``                       |
+| Schema       | ``{ "machineId": "<id>", decrementDesiredSize": <boolean> }``   |
 +--------------+-----------------------------------------------------------------+
 
 The attributes are to be interpreted as follows:
-  
+
+  * ``machineId``: The (cloudprovider-specific) id of the machine to terminate.
   * ``decrementDesiredSize``: ``true`` if the desired pool size should 
     be decremented, ``false`` otherwise.
 
 Example where a replacement machine is desired: ::
 
-   { "decrementDesiredSize": false }
+   { "machineId": "i-123457", "decrementDesiredSize": false }
 
 
 
@@ -784,22 +786,23 @@ Detach machine message
 **********************
 
 +--------------+-----------------------------------------------------------------+
-| Description  | Specifies if the desired size of the machine pool               |
-|              | should be decremented after detaching the machine               |
-|              | (that is, it controls if a replacement machine should           |
+| Description  | Specifies which pool member to detach and if the desired size   |
+|              | of the machine pool should be decremented after detaching the   |
+|              | machine (that is, it controls if a replacement machine should   |
 |              | be launched)                                                    |
 +--------------+-----------------------------------------------------------------+
-| Schema       | ``{ "decrementDesiredSize": <boolean> }``                       |
+| Schema       | ``{ "machineId": "<id>", "decrementDesiredSize": <boolean> }``  |
 +--------------+-----------------------------------------------------------------+
 
 The attributes are to be interpreted as follows:
-  
+
+  * ``machineId``: The (cloudprovider-specific) id of the machine to detach.
   * ``decrementDesiredSize``: ``true`` if the desired pool size should 
     be decremented, ``false`` otherwise.
 
 Example where a replacement machine is desired: ::
 
-   { "decrementDesiredSize": false }
+   { "machineId": "i-123457", "decrementDesiredSize": false }
 
 
 
@@ -808,14 +811,15 @@ Example where a replacement machine is desired: ::
 Set membership status message
 *****************************
 
-+--------------+-----------------------------------------------------------------+
-| Description  | Specifies the membership status for a machine.                  |
-+--------------+-----------------------------------------------------------------+
-| Schema       | ``{ "membershipStatus": {"active": bool, "evictable": bool} }`` |
-+--------------+-----------------------------------------------------------------+
++--------------+--------------------------------------------------------------------------------------+
+| Description  | Updates the membership status for a machine.                                         |
++--------------+--------------------------------------------------------------------------------------+
+| Schema       | ``{ "machineId": "<id>", "membershipStatus": {"active": bool, "evictable": bool} }`` |
++--------------+--------------------------------------------------------------------------------------+
 
 The attributes are to be interpreted as follows:
-  
+
+  * ``machineId``: The (cloudprovider-specific) id of the machine to update.
   * ``active``: Indicates if this is an active (working) pool member. A ``true``
     value indicates that this machine is a functioning pool member. A
     ``false`` value indicates that a replacement machine needs to be launched 
@@ -828,7 +832,7 @@ Example of a membership status for a broken machine that needs a replacement
 (``active`` == ``false``), but is to be kept around in the pool for troubleshooting
 (``evictable`` == ``false``): ::
 
-   { "membershipStatus": {"active": false, "evictable": false} }
+   { "machineId": "i-123457", "membershipStatus": {"active": false, "evictable": false} }
 
 
 
@@ -838,16 +842,17 @@ Example of a membership status for a broken machine that needs a replacement
 Set service state message
 *************************
 
-+--------------+-----------------------------------------------------------------+
-| Description  | Specifies the service state to set for the machine.             |
-+--------------+-----------------------------------------------------------------+
-| Schema       | ``{ "serviceState": "<service state>" }``                       |
-+--------------+-----------------------------------------------------------------+
++--------------+--------------------------------------------------------------------------------------+
+| Description  | Updates the service state for a particular pool member.                              |
++--------------+--------------------------------------------------------------------------------------+
+| Schema       | ``{ "machineId": "<id>", "serviceState": "<service state>" }``                       |
++--------------+--------------------------------------------------------------------------------------+
 
 The attributes are to be interpreted as follows:
-  
+
+  * ``machineId``: The (cloudprovider-specific) id of the machine to update.
   * ``serviceState``: The :ref:`service state <service_state_table>` to set.
 
 Example where a replacement machine is desired: ::
 
-   { "serviceState": "IN_SERVICE" }
+   { "machineId": "i-123457", "serviceState": "IN_SERVICE" }

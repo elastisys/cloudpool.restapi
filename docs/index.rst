@@ -1,7 +1,7 @@
-elastisys:scale cloud pool REST API documentation (version 4)
+elastisys:scale cloud pool REST API documentation (version 5.0.0)
 ===============================================================
 
-This documentation covers version 4 of the REST API that all 
+This documentation covers version 5.0.0 of the REST API that all 
 `elastisys:scale <http://elastisys.com/scale>`_ cloud pool endpoints
 are required to publish. 
 
