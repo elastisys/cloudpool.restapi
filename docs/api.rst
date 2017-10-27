@@ -418,8 +418,11 @@ Terminate machine
   - **Method**: ``POST /pool/terminate``
   - **Description**: Terminates a particular machine pool member.
     The caller can control if a replacement machine is to be provisioned via the
-    ``decrementDesiredSize``
-    parameter. 
+    ``decrementDesiredSize`` parameter.
+
+    **Note**: a machine that is protected from removal by a membership status
+    with ``evictable: false`` can not be terminated.
+  
   - **Input**: A :ref:`terminate_machine_message`.
   - **Output**:
       - On success: HTTP response code 200 without message content.
@@ -498,11 +501,16 @@ Detach machine
 
   - **Method**: ``POST /pool/detach``
   - **Description**: Removes a particular machine pool member from the pool
-    without terminating it. 
+    without terminating it.
+  
     The machine keeps running but is no longer considered a pool member and,
     therefore, needs to be managed independently. The caller can control if 
     a replacement machine is to be provisioned via the ``decrementDesiredSize``
-    parameter. 
+    parameter.
+
+    **Note**: a machine that is protected from removal by a membership status
+    with ``evictable: false`` can not be detached.
+  
   - **Input**: A :ref:`detach_machine_message`.
   - **Output**:
       - On success: HTTP response code 200 without message content.
@@ -526,7 +534,7 @@ Attach machine
   - **Description**: Attaches an already running machine to the machine pool,
     growing the pool with a new member.
     This operation implies that the desired size of the group is incremented by one.
-  - **Input**: None
+  - **Input**: An :ref:`attach_machine_message`.
   - **Output**:
       - On success: HTTP response code 200 without message content.
       - On error:    
@@ -804,6 +812,27 @@ Example where a replacement machine is desired: ::
 
    { "machineId": "i-123457", "decrementDesiredSize": false }
 
+
+.. _attach_machine_message:
+
+Attach machine message
+**********************
+
++--------------+-----------------------------------------------------------------+
+| Description  | Specifies a cloud machine that is to be attached to the         |
+|              | cloudpool.                                                      |
++--------------+-----------------------------------------------------------------+
+| Schema       | ``{ "machineId": "<id>" }``                                     |
++--------------+-----------------------------------------------------------------+
+
+The attributes are to be interpreted as follows:
+
+  * ``machineId``: The (cloudprovider-specific) id of the machine to attach.
+
+Example: ::
+
+   { "machineId": "i-123457" }
+   
 
 
 .. _set_membership_status_message:
